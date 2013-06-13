@@ -13,6 +13,7 @@ Collects data from RabbitMQ through the admin interface
 """
 
 import diamond.collector
+from diamond.collector import str_to_bool
 
 try:
     from numbers import Number
@@ -30,6 +31,8 @@ class RabbitMQCollector(diamond.collector.Collector):
             'host': 'Hostname and port to collect from',
             'user': 'Username',
             'password': 'Password',
+            'ssl': 'Use SSL',
+            'ignore_cert': 'Ignore certificate errors',
         })
         return config_help
 
@@ -39,10 +42,12 @@ class RabbitMQCollector(diamond.collector.Collector):
         """
         config = super(RabbitMQCollector, self).get_default_config()
         config.update({
-            'path':     'rabbitmq',
-            'host':     'localhost:55672',
-            'user':     'guest',
-            'password': 'guest',
+            'path':        'rabbitmq',
+            'host':        'localhost:55672',
+            'user':        'guest',
+            'password':    'guest',
+            'ssl':         'False',
+            'ignore_cert': 'False',
         })
         return config
 
@@ -54,7 +59,9 @@ class RabbitMQCollector(diamond.collector.Collector):
         try:
             client = pyrabbit.api.Client(self.config['host'],
                                          self.config['user'],
-                                         self.config['password'])
+                                         self.config['password'],
+                                         ssl=str_to_bool(self.config['ssl']),
+                                         no_verify=str_to_bool(self.config['ignore_cert']))
 
             for vhost in client.get_all_vhosts():
                 for queue in client.get_queues(vhost=vhost['name']):
